@@ -64,7 +64,7 @@ addopts = "-ra --strict-markers --cov --cov-branch --cov-report=term-missing --c
 source = ["src"]
 
 [tool.pyright]
-include = ["src", "tests", "scripts"]
+include = ["src", "tests"]
 venvPath = "."
 venv = ".venv"
 pythonVersion = "3.13"

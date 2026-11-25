@@ -33,8 +33,8 @@ from doc_review_opt.experiment.tradeoffs import (
 )
 from doc_review_opt.fixtures import CALIBRATION, EVAL_SET, HOLDOUT
 from doc_review_opt.reporting.walkthrough import gate, outcome_table
-from scripts.build_notebook import build_demo
-from scripts.nb_facts import Facts, facts
+from tests.notebook_files import read_demo
+from tests.simulation_facts import Facts, facts
 from tests.test_eval_set import LIVE_IDS, ORIGINAL_IDS
 
 README = (Path(__file__).resolve().parent.parent / "README.md").read_text("utf-8")
@@ -131,7 +131,7 @@ def test_the_live_run_pick_claim_matches_the_pick_function() -> None:
 
 
 def test_demo_text_states_the_computed_page_counts(fx: Facts) -> None:
-    text = "\n".join(c.source for c in build_demo().cells if c.cell_type == "markdown")
+    text = "\n".join(c.source for c in read_demo().cells if c.cell_type == "markdown")
     assert f"{fx.pages} synthetic, labelled pages" in text
     assert f"{fx.hard_pages} are traps or borderline" in text
     assert LIVE_CLAIM in text
@@ -141,7 +141,7 @@ def test_demo_text_states_the_computed_page_counts(fx: Facts) -> None:
 
 
 def test_demo_baseline_symptoms_match_the_traces(fx: Facts) -> None:
-    text = "\n".join(c.source for c in build_demo().cells if c.cell_type == "markdown")
+    text = "\n".join(c.source for c in read_demo().cells if c.cell_type == "markdown")
     metrics = fx.metrics[BASELINE]
     extra = fx.value(BASELINE, "mean_extra_tool_calls")
     tokens = fx.value(BASELINE, "mean_sync_tokens") / 1000
@@ -252,7 +252,7 @@ def test_no_live_run_page_is_attorney_cc_and_the_text_says_so() -> None:
 
 
 def test_demo_reader_text_is_plain(fx: Facts) -> None:
-    text = "\n".join(c.source for c in build_demo().cells if c.cell_type == "markdown")
+    text = "\n".join(c.source for c in read_demo().cells if c.cell_type == "markdown")
     assert "config.toml" not in text
     assert "p50 latency** is the typical page" in text
     assert "(their thresholds tuned on part of the pages)" in text
@@ -265,7 +265,7 @@ def test_demo_reader_text_is_plain(fx: Facts) -> None:
 
 
 def demo_text() -> str:
-    return "\n".join(c.source for c in build_demo().cells if c.cell_type == "markdown")
+    return "\n".join(c.source for c in read_demo().cells if c.cell_type == "markdown")
 
 
 def test_round_two_text_matches_the_gate(fx: Facts) -> None:
@@ -387,7 +387,7 @@ def test_harder_pages_table_shows_the_round_five_routes(fx: Facts) -> None:
         trace = fx.trace(SPLIT, row["doc_id"])
         assert row["route"] == trace.route
         assert row["route"] == row["expected"]
-    sources = [c.source for c in build_demo().cells if c.cell_type == "code"]
+    sources = [c.source for c in read_demo().cells if c.cell_type == "code"]
     assert any("outcome_table(traces, tricky_pages, SPLIT)" in s for s in sources)
     assert "what Round 5 did" in demo_text()
 
@@ -396,6 +396,6 @@ def test_the_printed_router_source_backs_the_fail_safe_claim() -> None:
     printed = inspect.getsource(decide)
     assert "missing_or_refused_answer" in printed
     assert "classifier_error" in printed
-    sources = [c.source for c in build_demo().cells if c.cell_type == "code"]
+    sources = [c.source for c in read_demo().cells if c.cell_type == "code"]
     assert any("inspect.getsource(decide)" in s for s in sources)
     assert "never produces a page; it fails safe to an attorney" in demo_text()

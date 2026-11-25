@@ -24,8 +24,8 @@ from doc_review_opt.reporting.walkthrough import (
     holdout_table,
     metrics_table,
 )
-from scripts.build_notebook import build_demo
-from scripts.nb_facts import facts
+from tests.notebook_files import read_demo
+from tests.simulation_facts import facts
 
 FLAGS = ("RUN_LIVE_API_CALLS", "RUN_LLM_JUDGE", "LANGSMITH_TRACING")
 SECRETS = ("OPENAI_API_KEY", "LANGSMITH_API_KEY")
@@ -49,15 +49,14 @@ MIN_FONT, MIN_TITLE_FONT, MIN_FIGURE_WIDTH, MAX_TABLE_COLUMNS = 12, 14, 12, 8
 INTRO_RUN = "3 pages finished, 1 waiting for an attorney: ARC-000284"
 
 
-def test_demo_is_deterministic_and_sized_for_a_talk() -> None:
-    first, second = build_demo(), build_demo()
-    assert first.cells == second.cells
-    assert MIN_CELLS <= len(first.cells) <= MAX_CELLS
-    assert first.metadata["kernelspec"]["name"] == "python3"
+def test_demo_size_and_kernel() -> None:
+    notebook = read_demo()
+    assert MIN_CELLS <= len(notebook.cells) <= MAX_CELLS
+    assert notebook.metadata["kernelspec"]["name"] == "python3"
 
 
 def test_cells_stay_short() -> None:
-    cells = build_demo().cells
+    cells = read_demo().cells
     markdown = [c for c in cells if c.cell_type == "markdown"]
     code = [c for c in cells if c.cell_type == "code"]
     assert [c.source for c in markdown if len(c.source) > MAX_MARKDOWN_CHARS] == []
@@ -67,7 +66,7 @@ def test_cells_stay_short() -> None:
 
 
 def test_every_diagram_is_drawn() -> None:
-    sources = [c.source for c in build_demo().cells if c.cell_type == "code"]
+    sources = [c.source for c in read_demo().cells if c.cell_type == "code"]
     for name in DIAGRAMS:
         assert any(f'draw_diagram("{name}")' in source for source in sources)
     assert any("draw_graph(" in source for source in sources)
@@ -81,7 +80,7 @@ def test_demo_runs_offline_without_errors_or_warnings(
     for secret in SECRETS:
         monkeypatch.delenv(secret, raising=False)
     notebook = NotebookClient(
-        build_demo(),
+        read_demo(),
         timeout=300,
         kernel_name="python3",
         resources={"metadata": {"path": str(tmp_path)}},
@@ -111,7 +110,7 @@ def test_demo_runs_offline_without_errors_or_warnings(
 
 
 def test_plumbing_cells_hide_their_source_and_teaching_cells_show_it() -> None:
-    cells = [c for c in build_demo().cells if c.cell_type == "code"]
+    cells = [c for c in read_demo().cells if c.cell_type == "code"]
 
     def hidden(cell: object) -> bool:
         return bool(cell.metadata.get("jupyter", {}).get("source_hidden"))  # type: ignore[attr-defined]

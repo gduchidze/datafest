@@ -1,4 +1,4 @@
-"""Executes the generated notebook offline and checks its outputs are clean."""
+"""Executes the published notebook offline and checks its outputs are clean."""
 
 from __future__ import annotations
 
@@ -8,7 +8,7 @@ import pytest
 from nbclient import NotebookClient
 
 from doc_review_opt.reporting.diagrams import list_diagrams
-from scripts.build_notebook import build
+from tests.notebook_files import read_full
 
 FLAGS = ("RUN_LIVE_API_CALLS", "RUN_LLM_JUDGE", "LANGSMITH_TRACING")
 SECRETS = ("OPENAI_API_KEY", "LANGSMITH_API_KEY")
@@ -17,15 +17,14 @@ BAD_MARKERS = ("Deserializing unregistered type", "Warning")
 DEMO_ONLY_DIAGRAMS = {"eval_pipeline"}
 
 
-def test_builder_is_deterministic() -> None:
-    first, second = build(), build()
-    assert first.cells == second.cells
-    assert len(first.cells) >= MIN_CELLS
-    assert first.metadata["kernelspec"]["name"] == "python3"
+def test_full_notebook_size_and_kernel() -> None:
+    notebook = read_full()
+    assert len(notebook.cells) >= MIN_CELLS
+    assert notebook.metadata["kernelspec"]["name"] == "python3"
 
 
 def test_diagrams_are_drawn_cells_not_mermaid_blocks() -> None:
-    cells = build().cells
+    cells = read_full().cells
     assert not [c for c in cells if "```mermaid" in c.source]
     drawn = [
         c.source for c in cells if c.cell_type == "code" and "draw_diagram(" in c.source
@@ -45,7 +44,7 @@ def test_notebook_runs_offline_without_errors_or_warnings(
         monkeypatch.delenv(secret, raising=False)
     monkeypatch.setenv("DOC_REVIEW_OUTPUT_DIR", str(tmp_path / "outputs"))
     notebook = NotebookClient(
-        build(),
+        read_full(),
         timeout=300,
         kernel_name="python3",
         resources={"metadata": {"path": str(tmp_path)}},
