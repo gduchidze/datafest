@@ -1,0 +1,340 @@
+[layout]
+row_height = 1.5
+top_margin = 1.0
+bottom_margin = 0.2
+pad_x = 0.22
+pad_y = 0.14
+min_gap = 0.55
+group_pad = 0.25
+group_label_pad = 0.32
+font_size = 12.0
+label_font_size = 11.0
+title_size = 14.0
+line_width = 1.6
+model_line_width = 3.0
+arrow_scale = 18.0
+corner = 0.12
+
+[kinds.step]
+fill = "neutral"
+text = "ink"
+
+[kinds.note]
+fill = "neutral"
+text = "ink"
+
+[kinds.produce]
+fill = "blue"
+text = "surface"
+
+[kinds.withhold]
+fill = "orange"
+text = "surface"
+
+[kinds.redact]
+fill = "aqua"
+text = "ink"
+
+[kinds.attorney]
+fill = "yellow"
+text = "ink"
+
+[kinds.decisions]
+fill = "neutral"
+text = "ink"
+edge = "blue"
+
+[kinds.luna]
+fill = "neutral"
+text = "ink"
+edge = "orange"
+
+[kinds.terra]
+fill = "neutral"
+text = "ink"
+edge = "aqua"
+
+[kinds.agent]
+fill = "neutral"
+text = "ink"
+edge = "yellow"
+
+[diagrams.optimization_loop]
+title = "The optimization loop"
+cols = 4
+rows = 2
+nodes = [
+  { id = "v1", label = "Version 1", col = 0, row = 0, kind = "step" },
+  { id = "traces", label = "Traces", col = 1, row = 0, kind = "step" },
+  { id = "find", label = "Find errors", col = 2, row = 0, kind = "step" },
+  { id = "evals", label = "Build evals", col = 3, row = 0, kind = "step" },
+  { id = "tune", label = "Tune", col = 3, row = 1, kind = "step" },
+  { id = "climb", label = "Climb", col = 2, row = 1, kind = "step" },
+]
+edges = [
+  { from = "v1", to = "traces" },
+  { from = "traces", to = "find" },
+  { from = "find", to = "evals" },
+  { from = "evals", to = "tune" },
+  { from = "tune", to = "climb" },
+  { from = "climb", to = "find", style = "dashed", label = "repeat" },
+]
+
+[diagrams.notebook_modes]
+title = "How the notebook runs"
+cols = 3
+rows = 2
+nodes = [
+  { id = "offline", label = "Offline simulation\ndefault, free", col = 0, row = 0, kind = "step" },
+  { id = "live", label = "Live cells\nRUN_LIVE_API_CALLS\n$1 budget, LangSmith traces", col = 0, row = 1, kind = "step" },
+  { id = "table", label = "Trace table", col = 1, row = 0.5, kind = "step" },
+  { id = "summary", label = "Summary tables\nand charts", col = 2, row = 0.5, kind = "step" },
+]
+edges = [
+  { from = "offline", to = "table" },
+  { from = "live", to = "table" },
+  { from = "table", to = "summary" },
+]
+
+[diagrams.bad_baseline]
+title = "The bad baseline: one agent does everything"
+cols = 4
+rows = 3
+nodes = [
+  { id = "page", label = "Page", col = 0, row = 1, kind = "note" },
+  { id = "agent", label = "One {terra}\nsuper-agent", col = 1, row = 1, kind = "agent" },
+  { id = "tools", label = "All 5 tools\nverbose payloads", col = 2, row = 0, kind = "step" },
+  { id = "text", label = "Free-text answer", col = 2, row = 1, kind = "step" },
+  { id = "side", label = "Privilege log, QA,\nproduction tags", col = 2, row = 2, kind = "step" },
+  { id = "route", label = "Page decision\nparsed from text", col = 3, row = 1, kind = "note" },
+]
+edges = [
+  { from = "page", to = "agent" },
+  { from = "agent", to = "tools" },
+  { from = "agent", to = "text" },
+  { from = "agent", to = "side", label = "synchronous", at = 0.55 },
+  { from = "text", to = "route" },
+]
+
+[diagrams.page_review]
+title = "One page through the review graph"
+cols = 6
+rows = 5
+nodes = [
+  { id = "page", label = "Page", col = 0, row = 2, kind = "note" },
+  { id = "decisions", label = "Decisions\nclassify\n3 questions", col = 1, row = 2, kind = "decisions" },
+  { id = "router", label = "Code router", col = 2.1, row = 2, kind = "step" },
+  { id = "second", label = "{second_opinion}\nsecond opinion", col = 3.6, row = 2, kind = "terra" },
+  { id = "attorney", label = "Attorney review", col = 5, row = 1, kind = "attorney" },
+  { id = "withhold", label = "Withhold", col = 5, row = 0, kind = "withhold" },
+  { id = "redact", label = "Redact", col = 5, row = 4, kind = "redact" },
+  { id = "produce", label = "Produce", col = 5, row = 3, kind = "produce" },
+]
+edges = [
+  { from = "page", to = "decisions" },
+  { from = "decisions", to = "router" },
+  { from = "router", to = "attorney", label = "privilege > {privilege_escalation}" },
+  { from = "router", to = "withhold", label = "responsive < {not_responsive}" },
+  { from = "router", to = "second", label = "ambiguous\n{not_responsive} to {responsive}" },
+  { from = "router", to = "redact", label = "PII > {pii_redaction}" },
+  { from = "router", to = "produce", label = "otherwise" },
+  { from = "second", to = "attorney", label = "still unsure" },
+  { from = "second", to = "produce", label = "clear" },
+]
+
+[diagrams.round1]
+title = "Round 1: fewer tools, strict answers"
+cols = 2
+rows = 2
+nodes = [
+  { id = "tools_before", label = "All 5 tools\nverbose payloads", col = 0, row = 0, kind = "step" },
+  { id = "text_before", label = "Free-text answer", col = 0, row = 1, kind = "step" },
+  { id = "tools_after", label = "Only the needed tools\nslim payloads", col = 1, row = 0, kind = "step" },
+  { id = "json_after", label = "Strict JSON answer", col = 1, row = 1, kind = "step" },
+]
+edges = [
+  { from = "tools_before", to = "tools_after" },
+  { from = "text_before", to = "json_after" },
+]
+groups = [
+  { label = "Before", nodes = ["tools_before", "text_before"] },
+  { label = "After", nodes = ["tools_after", "json_after"] },
+]
+
+[diagrams.round2]
+title = "Round 2: route pages by risk"
+cols = 3
+rows = 2
+nodes = [
+  { id = "all", label = "Every page\non {terra}", col = 0, row = 0.5, kind = "agent" },
+  { id = "triage", label = "Triage on {luna}", col = 1, row = 0.5, kind = "luna" },
+  { id = "routine", label = "{luna}\nroutine pages", col = 2, row = 0, kind = "luna" },
+  { id = "risky", label = "{terra}\nrisky pages", col = 2, row = 1, kind = "terra" },
+]
+edges = [
+  { from = "all", to = "triage" },
+  { from = "triage", to = "routine" },
+  { from = "triage", to = "risky" },
+]
+groups = [
+  { label = "Before", nodes = ["all"] },
+  { label = "After", nodes = ["triage", "routine", "risky"] },
+]
+
+[diagrams.round3]
+title = "Round 3: a decision model and a code router"
+cols = 4
+rows = 1
+nodes = [
+  { id = "llm", label = "An LLM classifies\nevery page", col = 0, row = 0, kind = "step" },
+  { id = "decisions", label = "Decisions call", col = 1, row = 0, kind = "decisions" },
+  { id = "router", label = "Code router", col = 2, row = 0, kind = "step" },
+  { id = "second", label = "{second_opinion}\nambiguous band only", col = 3, row = 0, kind = "terra" },
+]
+edges = [
+  { from = "llm", to = "decisions" },
+  { from = "decisions", to = "router" },
+  { from = "router", to = "second" },
+]
+groups = [
+  { label = "Before", nodes = ["llm"] },
+  { label = "After", nodes = ["decisions", "router", "second"] },
+]
+
+[diagrams.round4]
+title = "Round 4: put the stable part first"
+cols = 3
+rows = 1
+nodes = [
+  { id = "mixed", label = "Page mixed into\nthe prompt\nnothing cached", col = 0, row = 0, kind = "step" },
+  { id = "prefix", label = "Stable protocol\nprefix, cached", col = 1, row = 0, kind = "step" },
+  { id = "page", label = "Page\nchanges every call", col = 2, row = 0, kind = "step" },
+]
+edges = [
+  { from = "mixed", to = "prefix" },
+  { from = "prefix", to = "page", label = "then" },
+]
+groups = [
+  { label = "Before", nodes = ["mixed"] },
+  { label = "After", nodes = ["prefix", "page"] },
+]
+
+[diagrams.round5]
+title = "Round 5: a fast lane and a batch lane"
+cols = 4
+rows = 3
+nodes = [
+  { id = "classify", label = "Classify", col = 0, row = 1, kind = "step" },
+  { id = "route", label = "Route", col = 1, row = 1, kind = "step" },
+  { id = "decide", label = "Decide", col = 2, row = 1, kind = "step" },
+  { id = "log", label = "Privilege log", col = 3, row = 0, kind = "step" },
+  { id = "qa", label = "QA", col = 3, row = 1, kind = "step" },
+  { id = "tags", label = "Tags", col = 3, row = 2, kind = "step" },
+]
+edges = [
+  { from = "classify", to = "route" },
+  { from = "route", to = "decide" },
+  { from = "decide", to = "log", style = "dashed" },
+  { from = "decide", to = "qa", style = "dashed" },
+  { from = "decide", to = "tags", style = "dashed" },
+]
+groups = [
+  { label = "Sync lane", nodes = ["classify", "route", "decide"] },
+  { label = "Batch lane, {batch_off} off", nodes = ["log", "qa", "tags"] },
+]
+
+[diagrams.eval_pipeline]
+title = "The eval pipeline: one variant, every page, one verdict"
+cols = 3
+rows = 2
+nodes = [
+  { id = "evalset", label = "Eval set\nlabelled pages", col = 0, row = 0, kind = "step" },
+  { id = "run", label = "Run one variant\nthrough the same graph", col = 1, row = 0, kind = "step" },
+  { id = "traces", label = "One trace\nper page", col = 2, row = 0, kind = "step" },
+  { id = "graders", label = "Graders\nguardrails and metrics", col = 2, row = 1, kind = "step" },
+  { id = "gate", label = "Quality gate\nhard gates, {guardrail_floor} floor", col = 1, row = 1, kind = "step" },
+  { id = "report", label = "Round report\nbefore/after, scorecard", col = 0, row = 1, kind = "step" },
+]
+edges = [
+  { from = "evalset", to = "run" },
+  { from = "run", to = "traces" },
+  { from = "traces", to = "graders" },
+  { from = "graders", to = "gate" },
+  { from = "gate", to = "report" },
+]
+
+[diagrams.human_in_the_loop]
+title = "Attorney review pauses the graph"
+cols = 5
+rows = 1
+nodes = [
+  { id = "pause", label = "1 Graph pauses\nwith interrupt\nids and scores,\nno page text", col = 0, row = 0, kind = "step" },
+  { id = "decide", label = "2 Attorney\ndecides", col = 1, row = 0, kind = "attorney" },
+  { id = "resume", label = "3 Graph\nresumes", col = 2, row = 0, kind = "step" },
+  { id = "redact", label = "4 Redact first\nif PII", col = 3, row = 0, kind = "redact" },
+  { id = "result", label = "5 Result", col = 4, row = 0, kind = "step" },
+]
+edges = [
+  { from = "pause", to = "decide" },
+  { from = "decide", to = "resume" },
+  { from = "resume", to = "redact" },
+  { from = "redact", to = "result" },
+]
+
+[diagrams.decisions_or_llm]
+title = "Decisions or an LLM?"
+cols = 3
+rows = 4
+nodes = [
+  { id = "text", label = "Need generated text?", col = 0, row = 0, kind = "step" },
+  { id = "tools", label = "Need tool calls or\nyour own JSON schema?", col = 0, row = 1, kind = "step" },
+  { id = "typed", label = "Need a typed answer,\nfast and auditable?", col = 0, row = 2, kind = "step" },
+  { id = "llm", label = "Use an LLM", col = 2, row = 1, kind = "step" },
+  { id = "decisions", label = "Use Decisions", col = 0, row = 3, kind = "decisions" },
+  { id = "route", label = "Route in code,\nfail safe to attorney", col = 1, row = 3, kind = "attorney" },
+]
+edges = [
+  { from = "text", to = "tools", label = "no" },
+  { from = "tools", to = "typed", label = "no" },
+  { from = "typed", to = "decisions", label = "yes" },
+  { from = "decisions", to = "route" },
+  { from = "text", to = "llm", label = "yes" },
+  { from = "tools", to = "llm", label = "yes" },
+  { from = "typed", to = "llm", label = "no" },
+]
+
+[graph]
+title = "The review graph, drawn from the compiled LangGraph"
+group = "review_page: one subgraph per page, fanned out with Send"
+
+[graph.nodes.__start__]
+label = "START\nbatch of pages"
+kind = "note"
+
+[graph.nodes."review_page:classify"]
+label = "classify\nengine + code router"
+kind = "step"
+
+[graph.nodes."review_page:attorney_review"]
+label = "attorney_review\ninterrupt()"
+kind = "attorney"
+
+[graph.nodes."review_page:redact"]
+label = "redact"
+kind = "redact"
+
+[graph.nodes."review_page:produce"]
+label = "produce"
+kind = "produce"
+
+[graph.nodes."review_page:withhold"]
+label = "withhold"
+kind = "withhold"
+
+[graph.nodes."review_page:__end__"]
+label = "page done"
+kind = "note"
+
+[graph.nodes.__end__]
+label = "END\nall results"
+kind = "note"

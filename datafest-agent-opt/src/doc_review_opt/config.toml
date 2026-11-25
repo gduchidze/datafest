@@ -1,0 +1,595 @@
+[models]
+decisions = "gpt-6-luna"
+terra = "gpt-6.1-terra"
+luna = "gpt-6-luna"
+judge = "gpt-6.1-terra"
+triage = "gpt-6-luna"
+redaction = "gpt-6-luna"
+second_opinion = "gpt-6.1-terra"
+batch = "gpt-6-luna"
+decisions_price_key = "decisions:gpt-6-luna"
+
+[pricing]
+batch_discount = 0.5
+cache_min_tokens = 1024
+
+# USD per 1M tokens, Standard tier, verified 2026-11-18. Decisions output is free.
+[prices."gpt-6.1-terra"]
+input = 1.00
+cached_input = 0.05
+cache_write = 1.25
+output = 5.00
+
+[prices."gpt-6-luna"]
+input = 0.10
+cached_input = 0.01
+cache_write = 0.125
+output = 0.50
+
+[prices."decisions:gpt-6-luna"]
+input = 0.10
+cached_input = 0.01
+cache_write = 0.125
+output = 0.00
+
+[policy.default]
+privilege_escalation = 0.2
+pii_redaction = 0.5
+not_responsive = 0.5
+responsive = 1.5
+responsive_confidence = 0.7
+
+# The thresholds tradeoffs.calibrate_policy picks on the calibration split.
+[policy.calibrated]
+privilege_escalation = 0.2
+pii_redaction = 0.5
+not_responsive = 0.5
+responsive = 1.5
+responsive_confidence = 0.6
+
+[calibration]
+privilege_escalation = [0.2, 0.25, 0.3, 0.35, 0.4, 0.45]
+pii_redaction = [0.3, 0.4, 0.5, 0.6]
+not_responsive = [0.5]
+responsive = [1.5]
+responsive_confidence = [0.5, 0.55, 0.6, 0.7]
+sweep_thresholds = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+[live]
+page_limit = 6
+budget_limit_usd = 1.0
+max_concurrency = 4
+per_page_ceiling_usd = 0.05
+judge_call_ceiling_usd = 0.01
+redaction_call_ceiling_usd = 0.005
+timeout_s = 60.0
+max_retries = 2
+max_tool_rounds = 3
+triage_max_output_tokens = 200
+judge_max_output_tokens = 1000
+redaction_max_output_tokens = 2000
+llm_max_output_tokens = 400
+reasoning_effort = "none"
+
+[batch]
+max_output_tokens = 160
+background_output_tokens = 90
+
+[attorney]
+review_cost_usd_per_page = 1.50
+
+[quality]
+base = 0.98
+max = 0.99
+leak_penalty = 0.40
+wrong_route_penalty = 0.20
+escalation_mismatch_penalty = 0.15
+responsive_withheld_penalty = 0.10
+unnecessary_escalation_penalty = 0.06
+parse_failure_penalty = 0.08
+extra_tool_penalty = 0.025
+extra_tool_penalty_cap = 0.14
+max_extra_tools_before_flag = 2
+snippet_chars = 40
+guardrail_pass_floor = 0.95
+
+[metrics]
+median_quantile = 0.5
+tail_quantile = 0.95
+route_accuracy_floor = 0.90
+relevance_recall_floor = 0.95
+privileged_recall_floor = 1.0
+pii_recall_floor = 1.0
+max_under_escalation_rate = 0.05
+max_unnecessary_escalation_rate = 0.20
+
+[simulation]
+base_latency_s = 0.28
+input_tokens_per_s = 5200
+output_tokens_per_s = 3000
+tool_latency_s = 0.14
+triage_latency_s = 0.18
+sync_background_latency_s = 0.38
+cached_latency_fraction = 0.25
+decisions_base_latency_s = 0.06
+decisions_tokens_per_s = 40000
+decisions_question_latency_s = 0.01
+triage_overhead_tokens = 140
+triage_output_tokens = 42
+decisions_output_tokens_per_question = 12
+llm_output_tokens = 60
+sync_background_output_tokens = 90
+baseline_missed_redaction = ["ARC-000390", "ARC-000427"]
+baseline_unparseable = "ARC-000163"
+luna_slip = "ARC-000520"
+jitter_amplitude = 0.03
+priv_jitter_amplitude = 0.04
+decisive_score = 1.5
+borderline_probabilities = [0.12, 0.60, 0.28]
+clear_nonprivileged = 0.03
+# SIMULATION ASSUMPTION: Decisions privileged probability on attorney-cc'd business
+# mail once the question carries the protocol's cc rule. The live run measures it.
+cc_privilege_with_protocol_wording = 0.08
+borderline_nonprivileged = 0.12
+pii_clear = 0.03
+pii_simple = 0.92
+routine_peak_discount = 0.05
+near_share = 0.7
+band_confidence = [0.35, 0.10]
+clear_confidence = 0.85
+min_peak = 0.34
+max_peak = 0.98
+
+[simulation.model_latency_s]
+"gpt-6.1-terra" = 0.55
+"gpt-6-luna" = 0.18
+
+[simulation.engines.decisions]
+engine = "decisions"
+model = "gpt-6-luna"
+peak = 0.90
+trap_peak = 0.52
+priv_simple = 0.93
+priv_hard = 0.62
+cc_privileged = 0.30
+trap_privileged = 0.14
+pii_routine = 0.62
+decisive_confidence = [0.60, 0.68]
+
+[simulation.engines.llm-luna]
+engine = "llm"
+model = "gpt-6-luna"
+peak = 0.84
+trap_peak = 0.70
+priv_simple = 0.90
+priv_hard = 0.45
+cc_privileged = 0.22
+trap_privileged = 0.10
+pii_routine = 0.42
+
+[simulation.engines.llm-terra]
+engine = "llm"
+model = "gpt-6.1-terra"
+peak = 0.95
+trap_peak = 0.92
+priv_simple = 0.96
+priv_hard = 0.75
+cc_privileged = 0.08
+trap_privileged = 0.05
+pii_routine = 0.90
+
+[variants."00_bad_baseline"]
+engine = "agent"
+cascade = false
+model = "gpt-6.1-terra"
+payload = "verbose"
+strict_json = false
+all_tools = true
+carried_context_tokens = 1250
+sync_background_tokens = 900
+triage = false
+cache = false
+async_background = false
+verbosity = "high"
+max_output_tokens = 1200
+
+[variants."01_prompt_tool_context_controls"]
+engine = "agent"
+cascade = false
+model = "gpt-6.1-terra"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 280
+sync_background_tokens = 220
+triage = false
+cache = false
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+
+[variants."02_model_routing"]
+engine = "agent"
+cascade = false
+model = "gpt-6.1-terra"
+routine_model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 220
+sync_background_tokens = 180
+triage = true
+cache = false
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+
+[variants."03_decision_model"]
+engine = "decisions"
+cascade = true
+model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 0
+sync_background_tokens = 180
+triage = false
+cache = false
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+
+[variants."03a_router_only"]
+engine = "decisions"
+cascade = false
+model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 0
+sync_background_tokens = 180
+triage = false
+cache = false
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+
+[variants."03b_gist_wording"]
+engine = "decisions"
+cascade = true
+model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 0
+sync_background_tokens = 180
+triage = false
+cache = false
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+question_wording = "gist"
+
+[variants."04_prompt_caching"]
+engine = "decisions"
+cascade = true
+model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 0
+sync_background_tokens = 180
+triage = false
+cache = true
+async_background = false
+verbosity = "low"
+max_output_tokens = 600
+
+[variants."05_split_workflow"]
+engine = "decisions"
+cascade = true
+model = "gpt-6-luna"
+payload = "slim"
+all_tools = false
+carried_context_tokens = 0
+sync_background_tokens = 0
+triage = false
+cache = true
+async_background = true
+verbosity = "low"
+max_output_tokens = 600
+
+# Scoring scheme: quality +3/-4, policy +3/-5, latency +2/-2, budget +2/-2,
+# async +2/-1, cache locality penalty, +1 recommended. Escalation +2/-2 is added.
+[scoring]
+quality_ok = 3
+quality_bad = -4
+policy_ok = 3
+policy_bad = -5
+latency_ok = 2
+latency_bad = -2
+budget_ok = 2
+budget_bad = -2
+async_ok = 2
+async_bad = -1
+escalation_ok = 2
+escalation_bad = -2
+cache_penalty_low = 3
+cache_penalty_medium = 1
+recommended_bonus = 1
+monthly_pages = 100000
+
+[synthetic]
+base_variant = "03_decision_model"
+split_variant = "05_split_workflow"
+latency_saving_s = 0.30
+latency_floor_s = 0.5
+sync_background_cost_usd = 0.00007
+
+[architecture.baseline_one_big_agent]
+label = "One big agent"
+variant = "00_bad_baseline"
+models = "gpt-6.1-terra for every step"
+tools = "all tools exposed"
+cache = "none"
+workflow = "all work synchronous"
+best_for = "prototype smell test only"
+
+[architecture.controlled_terra]
+label = "Controlled terra agent"
+variant = "01_prompt_tool_context_controls"
+models = "gpt-6.1-terra for review"
+tools = "allowed tools by page type"
+cache = "none"
+workflow = "some follow-up still synchronous"
+best_for = "high-risk launch while routing is unproven"
+
+[architecture.llm_routed]
+label = "LLM routed luna/terra"
+variant = "02_model_routing"
+models = "gpt-6-luna triage and routine pages, gpt-6.1-terra for high risk"
+tools = "allowed tools by routed path"
+cache = "none"
+workflow = "some follow-up still synchronous"
+best_for = "mixed matters with moderate repeat traffic"
+
+[architecture.decisions_code_router]
+label = "Decisions + code router"
+variant = "03a_router_only"
+models = "Decisions on gpt-6-luna, code router, luna redaction"
+tools = "code pre-lookup, no model tools"
+cache = "none"
+workflow = "some follow-up still synchronous"
+best_for = "typed routing at volume when thresholds are calibrated"
+
+[architecture.decisions_llm_cascade]
+label = "Decisions + LLM cascade"
+variant = "03_decision_model"
+models = "Decisions on gpt-6-luna, gpt-6.1-terra second opinion in the ambiguous band"
+tools = "code pre-lookup, no model tools"
+cache = "none"
+workflow = "some follow-up still synchronous"
+best_for = "matters where attorney time costs more than a terra call"
+
+[architecture.decisions_cache]
+label = "Decisions + cache"
+variant = "04_prompt_caching"
+models = "Decisions on gpt-6-luna, terra second opinion, luna redaction"
+tools = "code pre-lookup, no model tools"
+cache = "stable protocol prefix"
+workflow = "some follow-up still synchronous"
+best_for = "rolling productions that reuse one protocol"
+
+[architecture.decisions_split_no_cache]
+label = "Decisions split, no cache"
+variant = ""
+models = "Decisions on gpt-6-luna, terra second opinion, luna Batch background"
+tools = "code pre-lookup, no model tools"
+cache = "none"
+workflow = "page path sync, privilege log, QA and tags async"
+best_for = "low-repeat matters that still need async follow-up work"
+
+[architecture.balanced_split]
+label = "Balanced split workflow"
+variant = "05_split_workflow"
+models = "Decisions on gpt-6-luna, terra second opinion, luna Batch background"
+tools = "code pre-lookup, no model tools"
+cache = "stable protocol prefix"
+workflow = "page path sync, privilege log, QA and tags async"
+best_for = "mature repeated-protocol review programs"
+
+[[scenarios]]
+scenario = "Second-request deadline"
+description = "Huge volume, a court deadline, and cost per page matters most."
+quality_floor = 0.90
+policy_floor = 0.90
+p50_latency_target_s = 2.0
+monthly_budget_100k_pages_usd = 100
+max_escalation_rate = 0.40
+needs_async = true
+cache_locality = "high"
+recommended = ["balanced_split", "decisions_cache"]
+
+[[scenarios]]
+scenario = "Privilege-heavy custodians"
+description = "Counsel's own mailboxes: privilege misses are unacceptable."
+quality_floor = 0.90
+policy_floor = 1.0
+p50_latency_target_s = 3.0
+monthly_budget_100k_pages_usd = 200
+max_escalation_rate = 0.60
+needs_async = true
+cache_locality = "medium"
+recommended = ["decisions_llm_cascade", "controlled_terra"]
+
+[[scenarios]]
+scenario = "PII/HIPAA-heavy matter"
+description = "Health and account data everywhere: a PII leak is the failure to avoid."
+quality_floor = 0.90
+policy_floor = 1.0
+p50_latency_target_s = 3.0
+monthly_budget_100k_pages_usd = 150
+max_escalation_rate = 0.50
+needs_async = true
+cache_locality = "medium"
+recommended = ["decisions_split_no_cache", "decisions_llm_cascade"]
+
+[[scenarios]]
+scenario = "Small internal investigation"
+description = "A few thousand pages, quality over unit cost, little repetition."
+quality_floor = 0.90
+policy_floor = 0.95
+p50_latency_target_s = 4.0
+monthly_budget_100k_pages_usd = 400
+max_escalation_rate = 0.70
+needs_async = false
+cache_locality = "low"
+recommended = ["controlled_terra", "llm_routed"]
+
+[[scenarios]]
+scenario = "Rolling production, repeated protocol"
+description = "Weekly productions under one protocol: the prefix repeats constantly."
+quality_floor = 0.90
+policy_floor = 0.95
+p50_latency_target_s = 2.0
+monthly_budget_100k_pages_usd = 80
+max_escalation_rate = 0.45
+needs_async = true
+cache_locality = "high"
+recommended = ["balanced_split", "decisions_cache"]
+
+[[scenarios]]
+scenario = "Low-repeat long tail of matters"
+description = "Many small matters, each with its own protocol: cache hits are rare."
+quality_floor = 0.90
+policy_floor = 0.95
+p50_latency_target_s = 2.5
+monthly_budget_100k_pages_usd = 120
+max_escalation_rate = 0.50
+needs_async = true
+cache_locality = "low"
+recommended = ["decisions_split_no_cache", "llm_routed"]
+
+[palette]
+surface = "#fcfcfb"
+text = "#52514e"
+grid = "#e1e0d9"
+neutral = "#f1f0ec"
+ink = "#1a1a18"
+blue = "#2a78d6"
+orange = "#eb6834"
+aqua = "#1baf7a"
+yellow = "#eda100"
+magenta = "#e87ba4"
+green = "#008300"
+good = "#0ca30c"
+critical = "#d03b3b"
+
+[entity_colors]
+produce = "blue"
+withhold = "orange"
+redact = "aqua"
+attorney_review = "yellow"
+decisions = "blue"
+llm-luna = "orange"
+llm-terra = "aqua"
+agent = "yellow"
+simulated = "blue"
+live = "orange"
+model_cost = "blue"
+attorney_cost = "orange"
+sync_tokens = "aqua"
+latency = "magenta"
+quality = "green"
+difficulty = "magenta"
+default_policy = "yellow"
+calibrated_policy = "aqua"
+
+[chart]
+width = 13.0
+height = 4.6
+tall_height = 9.5
+font_size = 12.0
+title_size = 14.0
+line_width = 2.0
+marker_size = 9.0
+bar_width = 0.55
+grid_width = 0.8
+label_pad = 4.0
+min_label_share = 0.08
+log_floor_factor = 0.625
+log_headroom = 2.5
+label_box_pad = 0.15
+threshold_axis_max = 1.0
+
+[live_run]
+date = "2026-11-18"
+pages = 6
+cost_usd = 0.18
+cheapest_engine = "llm-luna"
+
+[[live_run.rounds]]
+variant = "00_bad_baseline"
+quality = 0.84
+escalation_rate = 0.33
+sync_tokens = 16996
+p50_latency_s = 10.92
+model_cost_per_page_usd = 0.02243
+
+[[live_run.rounds]]
+variant = "01_prompt_tool_context_controls"
+quality = 0.98
+escalation_rate = 0.17
+sync_tokens = 942
+p50_latency_s = 2.96
+model_cost_per_page_usd = 0.00112
+
+[[live_run.rounds]]
+variant = "02_model_routing"
+quality = 0.95
+escalation_rate = 0.17
+sync_tokens = 1326
+p50_latency_s = 4.00
+model_cost_per_page_usd = 0.00039
+
+[[live_run.rounds]]
+variant = "03_decision_model"
+quality = 0.98
+escalation_rate = 0.17
+sync_tokens = 1772
+p50_latency_s = 0.45
+model_cost_per_page_usd = 0.00008
+
+[[live_run.rounds]]
+variant = "04_prompt_caching"
+quality = 0.98
+escalation_rate = 0.17
+sync_tokens = 1772
+p50_latency_s = 0.43
+model_cost_per_page_usd = 0.00021
+
+[[live_run.rounds]]
+variant = "05_split_workflow"
+quality = 0.98
+escalation_rate = 0.17
+sync_tokens = 1772
+p50_latency_s = 0.34
+model_cost_per_page_usd = 0.00008
+
+[[live_run.engines]]
+engine = "decisions"
+accuracy = 1.0
+model_cost_per_page_usd = 0.00019
+p50_latency_s = 0.38
+
+[[live_run.engines]]
+engine = "llm-luna"
+accuracy = 1.0
+model_cost_per_page_usd = 0.00011
+p50_latency_s = 2.26
+
+[[live_run.engines]]
+engine = "llm-terra"
+accuracy = 1.0
+model_cost_per_page_usd = 0.00073
+p50_latency_s = 3.03
+
+[[live_run.engines]]
+engine = "agent"
+accuracy = 1.0
+model_cost_per_page_usd = 0.00118
+p50_latency_s = 2.33

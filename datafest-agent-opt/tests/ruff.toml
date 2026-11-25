@@ -1,0 +1,5 @@
+extend = "../pyproject.toml"
+src = ["../src", ".."]
+
+[lint]
+ignore = ["TRY003", "S101"]
