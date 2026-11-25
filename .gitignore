@@ -221,3 +221,9 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Run outputs (keep the directory)
+outputs/*
+!outputs/.gitkeep
+.idea/
+CLAUDE.md
