@@ -4,7 +4,7 @@ Giorgi Duchidze’s DataFest talk explores when to use a decision model, when to
 
 | Resource | What it covers |
 | --- | --- |
-| [Presentation](index.html) | The 30-slide talk, including Impel’s production case on screening incoming customer messages. Download the HTML file and open it in a browser. |
+| [View the live presentation](https://datafest-decision-models.vercel.app/) | The 30-slide talk, including Impel’s production case on screening incoming customer messages. [HTML source](index.html) |
 | [Demo notebook](notebooks/optimizing_document_review_agents_demo.ipynb) | A 20-minute walkthrough of a separate document review agent. Follow a page from classification to release, redaction, withholding, or attorney review. |
 | [Full experiment](notebooks/optimizing_document_review_agents_for_cost_and_quality.ipynb) | Compare model routing, decision thresholds, caching, and batch processing across six rounds. |
 
